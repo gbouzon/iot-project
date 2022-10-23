@@ -20,34 +20,47 @@ temperatureValue = 0
 
 
 app.layout = html.Div(children=[
-    html.H1(children='IoT Dashboard', style={'text-align': 'center'}),
-    html.Div(className='container', id='led-box', children=[
+    html.H1(children='IoT Dashboard', style={'text-align': 'center', 'margin-left': '2%', 'margin-bottom': '5%'}),
+    html.Div( id='led-box', style={'margin-left': '2%', 'margin-top': '5%', 'margin-bottom': '5%'},children=[
         html.H1(children='LED Control'),
-        html.Button(img, id='led-image', n_clicks = 0)
+        html.Button(img, id='led-image', n_clicks = 0),
     ]),
-    html.Div(className='container', id='humidity-and-temperature', children=[
+
+    html.Div(className='grid-container', id='humidity-and-temperature', style={'margin-left': '2%', 'margin-top': '5%', 'margin-bottom': '5%'}, children=[
         html.H1(children='Humidity & Temperature'),
-        daq.Gauge(
-        id='humidity-gauge',
-        label='Current Humidity',
-        value=humidityValue,
-        max=100,
-        min=0
-    )
-    ]), 
-    daq.Thermometer(
-        id='temperature-thermometer',
-        label='Current temperature',
-        value=5,
-        min=0,
-        max=100,
-        style={
-            'margin-top': '10%',
-            'margin-bottom': '10%'
-        }
-    ),
+    ]),
+
+
+    dbc.Row([
+        dbc.Col(html.Div(id='humidity', children=[
+            daq.Gauge(
+            color={"gradient":True,"ranges":{"yellow":[0,30],"green":[30,50],"red":[50,100]}},
+            id='humidity-gauge',
+            label='Current Humidity',
+            showCurrentValue=True,
+            units="Percentage",
+            value=humidityValue,
+            max=100,
+            min=0
+            )
+        ])),
+        dbc.Col(html.Div(id='temperature', children=[
+            daq.Thermometer(
+            id='temperature-thermometer',
+            label='Current temperature',
+            value=temperatureValue,
+            showCurrentValue=True,
+            min=0,
+            max=100,
+            style={
+                'margin-top': '5%',
+                'margin-bottom': '5%'
+            })]))        
+        ]),
+ 
     dcc.Interval(id='interval-component', interval=1*1500, n_intervals=0)
-])
+],  style={'backgroundColor':'#B7CBC0', 'padding-top': '2%'})
+
 
 @app.callback(Output('led-image', 'children'),
               Input('led-image', 'n_clicks')
