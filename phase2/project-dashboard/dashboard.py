@@ -5,6 +5,7 @@ import dash_bootstrap_components as dbc
 import RPi.GPIO as GPIO
 import time
 import Freenove_DHT as DHT
+from Emails import sendEmail
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
@@ -116,6 +117,11 @@ def main():
 def update_sensor(n):
     dht.readDHT11()
     temperatureValue = dht.temperature
+    if(temperatureValue >= 24):
+        sendEmail("add sender email", 
+        "Change Temperature Sugguestion", 
+        "The current temperature is " + temperatureValue 
+        + " . Would you like to turn on the fan?")
     humidityValue = dht.humidity
     return humidityValue, temperatureValue
 
