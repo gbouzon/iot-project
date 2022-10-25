@@ -13,10 +13,18 @@ GPIO.setup(40, GPIO.OUT)
 DHTPin = 11 #define the pin of DHT11 - physical pin, not GPIO pin
 dht = DHT.DHT(DHTPin) #create a DHT class object
 
+Motor1 = 22 # Enable Pin
+Motor2 = 27 # Input Pin
+Motor3 = 17 # Input Pin   04 I think would work
+#GPIO.setup(Motor1,GPIO.OUT)
+#GPIO.setup(Motor2,GPIO.OUT)
+#GPIO.setup(Motor3,GPIO.OUT)
+
 app = Dash(__name__)
 img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='100px', height='100px')
 humidityValue = 0
 temperatureValue = 0
+motorOn = True
 
 
 app.layout = html.Div(children=[
@@ -55,7 +63,29 @@ app.layout = html.Div(children=[
             style={
                 'margin-top': '5%',
                 'margin-bottom': '5%'
-            })]))        
+            })])),
+        dbc.Col(html.Div(id='dc-motor', children=[
+            daq.ToggleSwitch(
+            id='motor',
+            label=['Fan On', 'Fan Off'],
+            value=motorOn,
+            #if temperatureValue >= 24:
+            #    GPIO.output(Motor1,GPIO.HIGH)
+            #    GPIO.output(Motor2,GPIO.LOW)
+            #    GPIO.output(Motor3,GPIO.HIGH)
+            #    value=False
+            #elif temperatureValue < 24:
+            #    sleep(5)
+            #    GPIO.output(Motor1,GPIO.LOW)
+            #    GPIO.cleanup()
+            #    value=motorOn
+            style={
+                'margin-top': '5%',
+                'margin-bottom': '5%'
+            }
+            
+            
+            )])) 
         ]),
  
     dcc.Interval(id='interval-component', interval=1*1500, n_intervals=0)
@@ -81,6 +111,7 @@ def main():
 
 @app.callback(Output('humidity-gauge', 'value'),
               Output('temperature-thermometer', 'value'),
+              Output('motor', 'value'),
               Input('interval-component', 'n_intervals'))
 def update_sensor(n):
     dht.readDHT11()
