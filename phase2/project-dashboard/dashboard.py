@@ -1,7 +1,8 @@
 import dash.dependencies
 import dash_daq as daq
-from dash import html, Input, Output, dcc, Dash
+from dash import html, Input, Output, dcc, Dash, State
 import dash_bootstrap_components as dbc
+from dash_bootstrap_templates import ThemeChangerAIO
 import RPi.GPIO as GPIO
 import time
 import Freenove_DHT as DHT
@@ -41,54 +42,138 @@ imap_srv = 'imap.gmail.com'
 imap_port = 993
 
 
-app.layout = html.Div(children=[
-    html.H1(children='IoT Dashboard', style={'text-align': 'center', 'margin-left': '2%', 'margin-bottom': '5%'}),
-    html.Div( id='led-box', style={'margin-left': '2%', 'margin-top': '5%', 'margin-bottom': '5%', 'text-align':'center'},children=[
-        html.H1(children='LED Control'),
-        html.Button(img, id='led-image', n_clicks = 0),
-    ]),
+theme_change = ThemeChangerAIO(aio_id="theme")
 
-    html.Div(className='grid-container', id='humidity-and-temperature', style={'text-align':'center','margin-left': '2%', 'margin-top': '5%', 'margin-bottom': '5%'}, children=[
-        html.H1(children='Humidity & Temperature'),
-    ]),
+offcanvas = html.Div(
+    [
+        dbc.Button(
+            "Setting", id="open-offcanvas-backdrop",style={'padding': 0, 'border': 'none', 'background': 'none'}
+        ),
+        dbc.Offcanvas(
+            html.Div(
+            [                       
+                html.Div(style={'text-align': 'center'},children=[
+                      html.Img(src=app.get_asset_url('avatar.png'), width='50%', height='50%', style={'border-radius': '50%'})
+            ]),
+                dbc.Row(
+                [
+                    dbc.Col(html.Div("Name: ")),
+                    dbc.Col(html.Div(dbc.Input(placeholder="username", size="md", className="mb-3", readonly=True))),
+                ]),
+                dbc.Row(
+                [
+                    dbc.Col(html.Div("Ideal Temperature: ")),
+                    dbc.Col(html.Div(dbc.Input(placeholder="ideal_temp", size="md", className="mb-3", readonly=True))),
+                ]),
+                dbc.Row(
+                [
+                    dbc.Col(html.Div("Ideal Humidity: ")),
+                    dbc.Col(html.Div(dbc.Input(placeholder="ideal_humidity", size="md", className="mb-3", readonly=True))),
+                ]),
+                dbc.Row(
+                [
+                    dbc.Col(html.Div("Ideal light intensity: ")),
+                    dbc.Col(html.Div(dbc.Input(placeholder="ideal_light_intensity", size="md", className="mb-3", readonly=True))),
+                ]),
+            ]),
+            id="offcanvas-backdrop",
+            title="User information",
+            is_open=False,
+        ),
+    ]
+)
 
 
-    dbc.Row([
-        dbc.Col(html.Div(id='humidity', children=[
-            daq.Gauge(
-            color={"gradient":True,"ranges":{"yellow":[0,30],"green":[30,50],"red":[50,100]}},
-            id='humidity-gauge',
-            label='Current Humidity',
-            showCurrentValue=True,
-            units="Percentage",
-            value=humidityValue,
-            max=100,
-            min=0
-            )
-        ])),
-        dbc.Col(html.Div(id='temperature', children=[
-            daq.Thermometer(
-            id='temperature-thermometer',
-            label='Current temperature',
-            value=temperatureValue,
-            showCurrentValue=True,
-            min=0,
-            max=100,
-            style={
-                'margin-top': '5%',
-                'margin-bottom': '5%'
-            })])),
+
+navbar = dbc.NavbarSimple(
+    children=[
+        dbc.NavItem(theme_change, style={'padding': 0, 'border': 'none', 'background': 'none'}),
+        # dbc.NavItem(dbc.NavLink("Settings", href="#")),
+        dbc.NavItem(dbc.NavLink(offcanvas))
+
+    ],
+    brand="SMARTHOME",
+    brand_href="#",
+    color="dark",
+    dark=True,
+    sticky='top'
+)
+ledBoxTab = html.Div(id='led-box', className='ledBox',children=[
+                html.H1(children='LED'),
+                html.Button(img, id='led-image', n_clicks = 0),
+        ])
+
+humidTempTab = html.Div(className='grid-container', children=[
+                dbc.Row([
+                    dbc.Col(html.Div(id='humidity', children=[
+                        daq.Gauge(
+                        color={"gradient":True,"ranges":{"yellow":[0,30],"green":[30,50],"red":[50,100]}},
+                        id='humidity-gauge',
+                        label='Current Humidity',
+                        showCurrentValue=True,
+                        units="Percentage",
+                        value=humidityValue,
+                        max=100,
+                        min=0
+                        )
+                    ])),
+                    dbc.Col(html.Div(id='temperature', children=[
+                        daq.Thermometer(
+                        id='temperature-thermometer',
+                        label='Current temperature',
+                        value=temperatureValue,
+                        showCurrentValue=True,
+                        min=0,
+                        max=100
+                        )
+                    ]))        
+                ])
+            ])
+
+fanControlTab =  html.Div(className='grid-container',id='fan-toggle-switch', children=[
+                html.Div(style={'text-align': 'center'},children=[
+                    html.Img(src=app.get_asset_url('fan.png'), width='15%', height='15%')
+                ]),
+                daq.ToggleSwitch(
+                size=100,
+                id='my-toggle-switch',
+                value=False,
+                label='Fan Status',
+                labelPosition='bottom',
+                color = '#0C6E87', 
+                style={
+                    'margin-top': '3%'
+                }
+                ),
+            ])
+
+tabs = dcc.Tabs([
+        dcc.Tab(className='custom-tab', label='LED Control', children=[
+            ledBoxTab
         ]),
-    daq.ToggleSwitch(
-        id='fan-toggle',
-        value= False,
-        label=['Fan OFF', 'Fan ON'],
-        labelPosition='bottom'
-),
- 
-    dcc.Interval(id='interval-component', interval=5*1000, n_intervals=0)
-],  style={'backgroundColor':'#B7CBC0', 'padding-top': '2%'})
+        dcc.Tab(className='custom-tab', label='Humidity & Temperature', children=[
+            humidTempTab
+        ]),
+        dcc.Tab(className='custom-tab', label='Fan Control', children=[
+            fanControlTab
+        ]),
+    ], colors={
+        "border": "#14397d",
+        "primary": "#77b5b9",
+        "background": "#d7eaf3"
+    })
 
+
+
+app.layout = html.Div(id="theme-switch-div", children=[
+    navbar,
+    html.H1(children='Welcome to IoT Dashboard', style={'text-align': 'center', 'margin-top': '3%'}),
+
+    html.Div(className='grid-container', style={'margin': '5% 7% 5% 7%'}, children=[
+        tabs
+    ]),
+    dcc.Interval(id='interval-component', interval=1*1500, n_intervals=0)
+])
 
 def send_email(subject, body):
     smtp_srv = 'smtp.gmail.com'

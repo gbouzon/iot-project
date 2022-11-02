@@ -1,0 +1,23 @@
+body { 
+    margin: 0 !important; 
+    background-color: #B7CBC0 !important;
+}
+#led-box {
+    text-align: center;
+    margin: 10%
+}
+
+.custom-tab {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-top: 3px solid transparent !important;
+    border-left: 3px solid transparent !important;
+    border-right: 3px solid transparent !important;
+    border-bottom: 3px solid transparent !important;
+    /* background-color: #B7CBC0; */
+}
+
+.grid-container {
+    margin: 10%
+}
+
