@@ -11,6 +11,7 @@ import imaplib
 import easyimap as imap
 import email
 #import paho.mqtt.client as mqtt
+import random
 from paho.mqtt import client as mqtt_client
 from datetime import datetime
 #This is to set time in specific timezone otherwise it gives time 2 hours in advance
@@ -38,7 +39,7 @@ intensityPin = 13 #33 in GPIO.BOARD
 GPIO.setup(intensityPin, GPIO.OUT)
 
 # This works as long as the arduino code is running (change broker)
-broker = '192.168.1.11'
+broker = '192.168.0.62'
 port = 1883
 topic = "/IoTlab/status"
 # generate client ID with pub prefix randomly
@@ -147,13 +148,13 @@ humidTempTab = html.Div(className='grid-container', children=[
                 ])
             ])
 
-fanControlTab =  html.Div(className='grid-container',id='fan-toggle-switch', children=[
+fanControlTab =  html.Div(className='grid-container',children=[
                 html.Div(style={'text-align': 'center'},children=[
                     html.Img(src=app.get_asset_url('fan.png'), width='15%', height='15%')
                 ]),
                 daq.ToggleSwitch(
                 size=100,
-                id='my-toggle-switch',
+                id='fan-toggle',
                 value=False,
                 label='Fan Status',
                 labelPosition='bottom',
@@ -296,6 +297,15 @@ def update_sensor(n):
     return humidityValue, temperatureValue
 
 #Phase 3 code
+@app.callback(
+    Output("offcanvas-backdrop", "is_open"),
+    Input("open-offcanvas-backdrop", "n_clicks"),
+    State("offcanvas-backdrop", "is_open"))
+def toggle_offcanvas(n1, is_open):
+    if n1:
+        return not is_open
+    return is_open
+
 def connect_mqtt() -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
