@@ -364,6 +364,9 @@ def subscribe(client: mqtt_client):
         print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
         lightmsg = ""
         lightIntensity = 0
+
+        currentLightIntensity = int(msg.payload.decode())
+
         #if (ms.topic == "/IoTlab/status"):
             #lightmsg = int(msg.payload.decode())
             #lightIntensity = lightmsg
@@ -387,7 +390,17 @@ def subscribe(client: mqtt_client):
 
     client.subscribe(topic)
     client.on_message = on_message
-    return on_message(client, userdata, msg)
+    print("Light intensity is :" + lightIntensity)
+    # return lightIntensity
+    return currentLightIntensity
+    #return on_message(client, userdata, msg)
+
+
+@app.callback(Output('light-intensity-value', 'value'),
+              Input('interval-component', 'n_intervals'))
+def update_sensor(n):
+    currentLightIntensity = subscribe
+    return 'The current light intensity is : ' + currentLightIntensity
 
 #def run():
     #client = connect_mqtt()
