@@ -43,10 +43,11 @@ GPIO.setup(Motor2,GPIO.OUT, initial=GPIO.HIGH)
 GPIO.setup(Motor3,GPIO.OUT, initial=GPIO.LOW)
 
 #Phase3 pin
-intensityPin = 13 #33 in GPIO.BOARD
-GPIO.setup(intensityPin, GPIO.OUT)
+#intensityPin = 13 #33 in GPIO.BOARD
+#GPIO.setup(intensityPin, GPIO.OUT)
 
 currentLightIntensity = 0
+global lightIntensity
 
 # This works as long as the arduino code is running (change broker)
 broker = '192.168.0.62'
@@ -139,7 +140,7 @@ ledBoxTab = html.Div(className='grid-container', id='led-box', children=[
                     size="lg",
                     id='light-intensity-value',
                     className="mb-3",
-                    value="The light intensity is " + str(currentLightIntensity),
+                    value="The light intensity is " + str(lightIntensity),
                     readonly = True,
                     style = {
                         'text-align': 'center',
@@ -361,9 +362,17 @@ def connect_mqtt() -> mqtt_client:
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
         print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
-        currentLightIntensity = msg.payload.decode()
+        lightmsg = ""
+        lightIntensity = 0
+        #if (ms.topic == "/IoTlab/status"):
+            #lightmsg = int(msg.payload.decode())
+            #lightIntensity = lightmsg
+            #if(str(lightmsg) < "400"):
+                #GPIO.output(21, GPIO.HIGH)
+        lightmsg = int(msg.payload.decode())
+        lightIntensity = lightmsg
         if(int(msg.payload.decode()) <= 400):
-            # GPIO.output(13, GPIO.HIGH)
+            #GPIO.output(13, GPIO.HIGH)
             GPIO.output(ledPin, GPIO.HIGH)
             #uncomment for the email sent, with mine there are some issues but it seems to be the correct format (don't want to spam)
             #time = datetime.now(pytz.timezone('America/New_York'))
@@ -374,22 +383,28 @@ def subscribe(client: mqtt_client):
             # GPIO.output(13, GPIO.LOW)
             GPIO.output(ledPin, GPIO.LOW)
             
-
+        
     client.subscribe(topic)
     client.on_message = on_message
-    return on_message(client, userdata, msg)
+    print("Light intensity is :" + lightIntensity)
+    return lightIntensity
+    #return on_message(client, userdata, msg)
 
-def run():
-    client = connect_mqtt()
-    subscribe(client)
+#def run():
+    #client = connect_mqtt()
+    #subscribe(client)
     # client.loop_forever()
-    client.loop_start()
+    #client.loop_start()
 
 def main():
     db_file = "smarthome.db"
     conn = create_connection(db_file)
 
     #run()
+    client = connect_mqtt()
+    subscribe(client)
+    #client.loop_forever()
+    client.loop_start()
     app.run_server(debug=True, host='localhost', port=8050)
     #Now to run phase 3 uncomment run() and comment the app.run_server(debug=True, host='localhost', port=8050)
   
