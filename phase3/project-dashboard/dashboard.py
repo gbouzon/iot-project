@@ -382,13 +382,12 @@ def subscribe(client: mqtt_client):
         else:
             # GPIO.output(13, GPIO.LOW)
             GPIO.output(ledPin, GPIO.LOW)
+        return currentLightIntensity
             
-        
+
     client.subscribe(topic)
     client.on_message = on_message
-    print("Light intensity is :" + lightIntensity)
-    return lightIntensity
-    #return on_message(client, userdata, msg)
+    return on_message(client, userdata, msg)
 
 #def run():
     #client = connect_mqtt()
