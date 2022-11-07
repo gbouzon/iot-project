@@ -1,9 +1,12 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <Arduino.h>
-const char* ssid = "geograph 2G";
-const char* password = "newlightning87&";
-const char* mqtt_server = "192.168.1.11";
+const char* ssid = "DucWifi 2.4GHz";
+const char* password = "Admin199z";
+const char* mqtt_server = "192.168.0.62";
+//const char* ssid = "geograph 2G";
+//const char* password = "newlightning87&";
+//const char* mqtt_server = "192.168.1.11";
 //const char* ssid = "TP-Link_2AD8";
 //const char* password = "14730078";
 //const char* mqtt_server = "192.168.0.112";

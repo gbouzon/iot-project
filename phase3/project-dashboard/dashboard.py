@@ -17,6 +17,14 @@ from datetime import datetime
 #This is to set time in specific timezone otherwise it gives time 2 hours in advance
 import pytz
 
+import sqlite3
+from sqlite3 import Error
+
+# connect to db 'smarthomedb'
+# conn = sqlite3.connect('smarthomedb')
+# cursor = conn.cursor()
+# cursor.execute('SELECT * FROM user_info WHERE userId = 1')
+
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
@@ -38,6 +46,8 @@ GPIO.setup(Motor3,GPIO.OUT, initial=GPIO.LOW)
 intensityPin = 13 #33 in GPIO.BOARD
 GPIO.setup(intensityPin, GPIO.OUT)
 
+currentLightIntensity = 0
+
 # This works as long as the arduino code is running (change broker)
 broker = '192.168.0.62'
 port = 1883
@@ -47,7 +57,7 @@ client_id = f'python-mqtt-{random.randint(0, 100)}'
 
 
 app = Dash(__name__)
-img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='100px', height='100px')
+img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='40%', height='40%')
 humidityValue = 0
 temperatureValue = 0
 emailSent = False
@@ -102,7 +112,6 @@ offcanvas = html.Div(
 )
 
 
-
 navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(theme_change, style={'padding': 0, 'border': 'none', 'background': 'none'}),
@@ -116,10 +125,32 @@ navbar = dbc.NavbarSimple(
     dark=True,
     sticky='top'
 )
-ledBoxTab = html.Div(id='led-box', className='ledBox',children=[
+ledBoxTab = html.Div(className='grid-container', id='led-box', children=[
+    dbc.Row([
+            dbc.Col(html.Div(children=[
                 html.H1(children='LED'),
                 html.Button(img, id='led-image', n_clicks = 0),
+                html.P(children='Click the image to turn on the LED'),
+            ])),
+            dbc.Col(html.Div(children=[
+                html.H1(children='Current Light Intensity'),
+                html.Img(src=app.get_asset_url('light_intensity.png'),width='30%', height='30%'),
+                dbc.Input(
+                    size="lg",
+                    id='light-intensity-value',
+                    className="mb-3",
+                    value="The light intensity is " + str(currentLightIntensity),
+                    readonly = True,
+                    style = {
+                        'text-align': 'center',
+                        'margin-top': '2%',
+                        'margin-right': '5%',
+                        'margin-left': '5%'
+                    }
+                )
+            ]))        
         ])
+])
 
 humidTempTab = html.Div(className='grid-container', children=[
                 dbc.Row([
@@ -193,6 +224,14 @@ app.layout = html.Div(id="theme-switch-div", children=[
     dcc.Interval(id='interval-component', interval=1*1500, n_intervals=0)
 ])
 
+def create_connection(db_file):
+    conn = None 
+    try:
+        conn = sqlite3.connect(db_file)
+    except Error as e:
+        print(e)
+    return conn
+
 def send_email(subject, body):
     smtp_srv = 'smtp.gmail.com'
     smtp_port = 587
@@ -253,11 +292,11 @@ def receive_email():
 def update_output(n_clicks):
     if n_clicks % 2 == 1:
         GPIO.output(ledPin, GPIO.HIGH)
-        img = html.Img(src=app.get_asset_url('lightbulb_on.png'), width='100px', height='100px')
+        img = html.Img(src=app.get_asset_url('lightbulb_on.png'), width='200px', height='200px')
         return img
     else:
         GPIO.output(ledPin, GPIO.LOW)
-        img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='100px', height='100px')
+        img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='200px', height='200px')
         return img
     
 
@@ -306,6 +345,7 @@ def toggle_offcanvas(n1, is_open):
         return not is_open
     return is_open
 
+
 def connect_mqtt() -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
@@ -318,34 +358,39 @@ def connect_mqtt() -> mqtt_client:
     client.connect(broker, port)
     return client
 
-
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
         print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
-        
+        currentLightIntensity = msg.payload.decode()
         if(int(msg.payload.decode()) <= 400):
-            GPIO.output(13, GPIO.HIGH)
+            # GPIO.output(13, GPIO.HIGH)
+            GPIO.output(ledPin, GPIO.HIGH)
             #uncomment for the email sent, with mine there are some issues but it seems to be the correct format (don't want to spam)
             #time = datetime.now(pytz.timezone('America/New_York'))
             #currtime = time.strftime("%H:%M")
             #send_email("Light", "The Light is ON at " + currtime + ".")
             #emailSent = True
         else:
-            GPIO.output(13, GPIO.LOW)
+            # GPIO.output(13, GPIO.LOW)
+            GPIO.output(ledPin, GPIO.LOW)
             
-        return msg.payload.decode()
 
     client.subscribe(topic)
     client.on_message = on_message
+    return on_message(client, userdata, msg)
 
 def run():
     client = connect_mqtt()
     subscribe(client)
-    client.loop_forever()
+    # client.loop_forever()
+    client.loop_start()
 
 def main():
+    db_file = "smarthome.db"
+    conn = create_connection(db_file)
+
+    #run()
     app.run_server(debug=True, host='localhost', port=8050)
     #Now to run phase 3 uncomment run() and comment the app.run_server(debug=True, host='localhost', port=8050)
-    #run()
   
 main()
