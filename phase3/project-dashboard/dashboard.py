@@ -59,6 +59,7 @@ app = Dash(__name__)
 img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='40%', height='40%')
 humidityValue = 0
 temperatureValue = 0
+tempUnit = 'Celsius'
 emailSent = False
 emailReceived = 0
 
@@ -138,7 +139,7 @@ ledBoxTab = html.Div(className='grid-container', id='led-box', children=[
                     size="lg",
                     id='light-intensity-value',
                     className="mb-3",
-                    value="The light intensity is " + str(currentLightIntensity) + isItOn,
+                    value="The light intensity is " + str(currentLightIntensity), # + isItOn,
                     readonly = True,
                     style = {
                         'text-align': 'center',
@@ -171,10 +172,18 @@ humidTempTab = html.Div(className='grid-container', children=[
                         label='Current temperature',
                         value=temperatureValue,
                         showCurrentValue=True,
-                        min=0,
-                        max=100
+                        min=-20,
+                        max=122
+                        ),
+                        daq.ToggleSwitch(
+                        size=40,
+                        id='temp-toggle',
+                        value=False
+                        label=['Celsius', 'Fahrenheit'],
+                        labelPosition='bottom',
+                        color = '#0C6E87'
                         )
-                    ]))        
+                    ])),       
                 ])
             ])
 
@@ -314,8 +323,10 @@ def toggle_fan(value):
 
 @app.callback(Output('humidity-gauge', 'value'),
               Output('temperature-thermometer', 'value'),
-              Input('interval-component', 'n_intervals'))
-def update_sensor(n):
+              Output('temperature-thermometer', 'units')
+              Input('interval-component', 'n_intervals'),
+              Input('temp-toggle', 'value'))
+def update_sensor(n, tValue):
     global emailSent
     global emailReceived
     dht.readDHT11()
@@ -334,7 +345,15 @@ def update_sensor(n):
         emailReceived = 0
         
     humidityValue = dht.humidity
-    return humidityValue, temperatureValue
+
+    # for toggle switch: C to F
+    if tValue:
+        tempUnit = 'Fahrenheit'
+        temperatureValue = temperatureValue * (9/5) + 32
+    elif not tValue:
+        tempUnit = 'Celsius'
+
+    return humidityValue, temperatureValue, tempUnit
 
 
 #Phase 3 code
