@@ -42,15 +42,13 @@ GPIO.setup(Motor1,GPIO.OUT, initial=GPIO.LOW)
 GPIO.setup(Motor2,GPIO.OUT, initial=GPIO.HIGH)
 GPIO.setup(Motor3,GPIO.OUT, initial=GPIO.LOW)
 
-#Phase3 pin
-#intensityPin = 13 #33 in GPIO.BOARD
-#GPIO.setup(intensityPin, GPIO.OUT)
 
-currentLightIntensity = 0
+global current_light_intensity
+currentLightIntensity = "NaN"
 global lightIntensity
 
 # This works as long as the arduino code is running (change broker)
-broker = '192.168.0.62'
+broker = '10.0.0.12'
 port = 1883
 topic = "/IoTlab/status"
 # generate client ID with pub prefix randomly
@@ -140,7 +138,7 @@ ledBoxTab = html.Div(className='grid-container', id='led-box', children=[
                     size="lg",
                     id='light-intensity-value',
                     className="mb-3",
-                    value="The light intensity is " + str(lightIntensity),
+                    value="The light intensity is " + str(currentLightIntensity) + isItOn,
                     readonly = True,
                     style = {
                         'text-align': 'center',
@@ -299,7 +297,7 @@ def update_output(n_clicks):
         GPIO.output(ledPin, GPIO.LOW)
         img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='200px', height='200px')
         return img
-    
+       
 
 @app.callback(Output('fan-toggle', 'value'),
               Input('fan-toggle', 'value')
@@ -336,6 +334,7 @@ def update_sensor(n):
     humidityValue = dht.humidity
     return humidityValue, temperatureValue
 
+
 #Phase 3 code
 @app.callback(
     Output("offcanvas-backdrop", "is_open"),
@@ -359,65 +358,54 @@ def connect_mqtt() -> mqtt_client:
     client.connect(broker, port)
     return client
 
+
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
         print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
         lightmsg = ""
         lightIntensity = 0
-
-        currentLightIntensity = int(msg.payload.decode())
-
-        #if (ms.topic == "/IoTlab/status"):
-            #lightmsg = int(msg.payload.decode())
-            #lightIntensity = lightmsg
-            #if(str(lightmsg) < "400"):
-                #GPIO.output(21, GPIO.HIGH)
         lightmsg = int(msg.payload.decode())
-        lightIntensity = lightmsg
+        currentLightIntensity = lightmsg
         if(int(msg.payload.decode()) <= 400):
-            #GPIO.output(13, GPIO.HIGH)
             GPIO.output(ledPin, GPIO.HIGH)
+            
             #uncomment for the email sent, with mine there are some issues but it seems to be the correct format (don't want to spam)
             #time = datetime.now(pytz.timezone('America/New_York'))
             #currtime = time.strftime("%H:%M")
             #send_email("Light", "The Light is ON at " + currtime + ".")
             #emailSent = True
-        else:
-            # GPIO.output(13, GPIO.LOW)
-            GPIO.output(ledPin, GPIO.LOW)
-        return currentLightIntensity
             
-
+        else:
+            GPIO.output(ledPin, GPIO.LOW)
+            
+            #emailSent = False
+            
+            
+        global current_light_intensity
+        current_light_intensity = msg.payload.decode()
+        
+            
+        
     client.subscribe(topic)
     client.on_message = on_message
-    print("Light intensity is :" + lightIntensity)
-    # return lightIntensity
     return currentLightIntensity
-    #return on_message(client, userdata, msg)
 
 
 @app.callback(Output('light-intensity-value', 'value'),
               Input('interval-component', 'n_intervals'))
-def update_sensor(n):
-    currentLightIntensity = subscribe
-    return 'The current light intensity is : ' + currentLightIntensity
+def update_light_intensity(n):
+    return 'The current light intensity is:' + str(current_light_intensity)
 
-#def run():
-    #client = connect_mqtt()
-    #subscribe(client)
-    # client.loop_forever()
-    #client.loop_start()
+
 
 def main():
     db_file = "smarthome.db"
     conn = create_connection(db_file)
 
-    #run()
     client = connect_mqtt()
     subscribe(client)
-    #client.loop_forever()
     client.loop_start()
-    app.run_server(debug=True, host='localhost', port=8050)
-    #Now to run phase 3 uncomment run() and comment the app.run_server(debug=True, host='localhost', port=8050)
+    app.run_server(debug=True, host='localhost', port=8051)
+    
   
 main()
