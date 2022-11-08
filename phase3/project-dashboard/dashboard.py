@@ -60,7 +60,7 @@ img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='40%', height='4
 humidityValue = 0
 temperatureValue = 0
 emailSent = False
-#emailReceived = True
+emailReceived = 0
 
 source_address = 'pi.iotnotificationservices@gmail.com'
 dest_address = 'ga@bouzon.com.br'
@@ -317,19 +317,21 @@ def toggle_fan(value):
               Input('interval-component', 'n_intervals'))
 def update_sensor(n):
     global emailSent
+    global emailReceived
     dht.readDHT11()
     temperatureValue = dht.temperature
     if temperatureValue > 24 and not emailSent:
         send_email("Temperature is High", "Would you like to start the fan?")
         emailSent = True
-        #emailReceived = False
-    elif receive_email():
+    elif receive_email() and emailReceived < 1:
+        emailReceived = 1
         toggle_fan(True)
         time.sleep(5)
         toggle_fan(False)
     elif temperatureValue < 22:
         toggle_fan(False)
         emailSent = False
+        emailReceived = 0
         
     humidityValue = dht.humidity
     return humidityValue, temperatureValue
