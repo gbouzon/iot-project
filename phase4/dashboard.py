@@ -44,13 +44,16 @@ GPIO.setup(Motor3,GPIO.OUT, initial=GPIO.LOW)
 
 
 global current_light_intensity
-currentLightIntensity = "NaN"
-global lightIntensity
+current_light_intensity = "NaN"
+
+global tagID;
+tagID = "NaN"
 
 # This works as long as the arduino code is running (change broker)
 broker = '192.168.0.65'
 port = 1883
 topic = "/IoTlab/status"
+topic2 = "/IoTlab/readTag"
 # generate client ID with pub prefix randomly
 client_id = f'python-mqtt-{random.randint(0, 100)}'
 
@@ -139,7 +142,7 @@ ledBoxTab = html.Div(className='grid-container', id='led-box', children=[
                     size="lg",
                     id='light-intensity-value',
                     className="mb-3",
-                    value="The light intensity is " + str(currentLightIntensity), # + isItOn,
+                    value="The light intensity is " + str(current_light_intensity),
                     readonly = True,
                     style = {
                         'text-align': 'center',
@@ -233,12 +236,14 @@ app.layout = html.Div(id="theme-switch-div", children=[
 ])
 
 def create_connection(db_file):
-    conn = None 
+    conn = None
     try:
         conn = sqlite3.connect(db_file)
     except Error as e:
         print(e)
+
     return conn
+
 
 def send_email(subject, body):
     smtp_srv = 'smtp.gmail.com'
@@ -382,51 +387,68 @@ def connect_mqtt() -> mqtt_client:
 
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
-        print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
-        lightmsg = ""
-        lightIntensity = 0
-        lightmsg = int(msg.payload.decode())
-        currentLightIntensity = lightmsg
-        if(int(msg.payload.decode()) <= 400):
-            GPIO.output(ledPin, GPIO.HIGH)
-            
-            #uncomment for the email sent, with mine there are some issues but it seems to be the correct format (don't want to spam)
-            #time = datetime.now(pytz.timezone('America/New_York'))
-            #currtime = time.strftime("%H:%M")
-            #send_email("Light", "The Light is ON at " + currtime + ".")
-            #emailSent = True
-            
-        else:
-            GPIO.output(ledPin, GPIO.LOW)
-            
-            #emailSent = False
-            
-            
-        global current_light_intensity
-        current_light_intensity = msg.payload.decode()
+        if (msg.topic == topic):
+            print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+
+            if(int(msg.payload.decode()) <= 400):
+                GPIO.output(ledPin, GPIO.HIGH)
+                
+                #uncomment for the email sent, with mine there are some issues but it seems to be the correct format (don't want to spam)
+                #time = datetime.now(pytz.timezone('America/New_York'))
+                #currtime = time.strftime("%H:%M")
+                #send_email("Light", "The Light is ON at " + currtime + ".")
+                #emailSent = True
+                
+            else:
+                GPIO.output(ledPin, GPIO.LOW)
+                
+                #emailSent = False
+                
+            global current_light_intensity
+            current_light_intensity = msg.payload.decode()
         
+        if (msg.topic == topic2):
+            print(f"Received tag: `{msg.payload.decode()}` from `{msg.topic}` topic")
+            global tagID
+            tagID = msg.payload.decode()
+            logIn()
             
         
     client.subscribe(topic)
+    client.subscribe(topic2)
     client.on_message = on_message
-    return currentLightIntensity
 
 
 @app.callback(Output('light-intensity-value', 'value'),
               Input('interval-component', 'n_intervals'))
 def update_light_intensity(n):
-    return 'The current light intensity is:' + str(current_light_intensity)
+    return 'The  light intensity is:' + str(current_light_intensity)
 
+def logIn():
+    db_file = "smarthome_db"
+    conn = create_connection(db_file)
+    cur = conn.cursor()
+    
+    try:
+        cur.execute("SELECT * FROM users WHERE userID = ?", [tagID])
+        user = cur.fetchone()
+        
+        if not user:
+            print("log in failed")
+        else:
+            print("card found")
+    
+    finally:
+        cur.close()
+        
+    
 
-
-def main():
-    # db_file = "smarthome.db"
-    # conn = create_connection(db_file)
-
+def main():    
     client = connect_mqtt()
     subscribe(client)
     client.loop_start()
-    app.run_server(debug=True, host='localhost', port=8050)
-    
+
+    app.run_server(debug=True, host='localhost', port=8050)    
   
 main()
+
