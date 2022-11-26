@@ -68,6 +68,7 @@ emailSent = False
 emailReceived = 0
 logInEmailSent = False;
 
+
 source_address = 'pi.iotnotificationservices@gmail.com'
 dest_address = 'ga@bouzon.com.br'
 password = 'uuoe gtxq zccp yzgp'
@@ -262,7 +263,6 @@ def create_connection(db_file):
 
     return conn
 
-
 def send_email(subject, body):
     smtp_srv = 'smtp.gmail.com'
     smtp_port = 587
@@ -455,6 +455,11 @@ def logIn():
             print("log in failed")
         else:
             print("card found")
+            if(logInEmailSent): #maybe need to change the User[1] 
+                # email would not be albe to resend if other user is login in after(same session)
+                time = datetime.now(pytz.timezone('America/New_York'))
+                currtime = time.strftime("%H:%M")
+                send_email("LogIn", user[1] + "entered at" + currtime)
     
     finally:
         cur.close()
