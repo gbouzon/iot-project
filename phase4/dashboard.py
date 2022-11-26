@@ -60,11 +60,13 @@ client_id = f'python-mqtt-{random.randint(0, 100)}'
 
 app = Dash(__name__)
 img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='40%', height='40%')
+userPhoto = html.Img(src=app.get_asset_url('avatar.png'),width='15%', height='15%', style={'border-radius': '50%'})
 humidityValue = 0
 temperatureValue = 0
 tempUnit = 'Celsius'
 emailSent = False
 emailReceived = 0
+logInEmailSent = False;
 
 source_address = 'pi.iotnotificationservices@gmail.com'
 dest_address = 'ga@bouzon.com.br'
@@ -73,12 +75,12 @@ imap_srv = 'imap.gmail.com'
 imap_port = 993
 
 
-theme_change = ThemeChangerAIO(aio_id="theme")
+theme_change = ThemeChangerAIO(aio_id="theme");
 
 offcanvas = html.Div(
     [
         dbc.Button(
-            "Setting", id="open-offcanvas-backdrop",style={'padding': 0, 'border': 'none', 'background': 'none'}
+            userPhoto, id="open-offcanvas-backdrop",style={'padding': 0, 'border': 'none', 'background': 'none'}
         ),
         dbc.Offcanvas(
             html.Div(
@@ -106,6 +108,10 @@ offcanvas = html.Div(
                     dbc.Col(html.Div("Ideal light intensity: ")),
                     dbc.Col(html.Div(dbc.Input(placeholder="ideal_light_intensity", size="md", className="mb-3", readonly=True))),
                 ]),
+                dbc.Row(
+                [   
+                    dbc.Col(html.Div(theme_change, style={'padding': 0, 'border': 'none', 'background': 'none'})),
+                ])
             ]),
             id="offcanvas-backdrop",
             title="User information",
@@ -114,13 +120,9 @@ offcanvas = html.Div(
     ]
 )
 
-
 navbar = dbc.NavbarSimple(
     children=[
-        dbc.NavItem(theme_change, style={'padding': 0, 'border': 'none', 'background': 'none'}),
-        # dbc.NavItem(dbc.NavLink("Settings", href="#")),
-        dbc.NavItem(dbc.NavLink(offcanvas))
-
+        dbc.NavItem(dbc.NavLink(offcanvas), style={'text-align': 'end'})
     ],
     brand="SMARTHOME",
     brand_href="#",
@@ -128,35 +130,47 @@ navbar = dbc.NavbarSimple(
     dark=True,
     sticky='top'
 )
-ledBoxTab = html.Div(className='grid-container', id='led-box', children=[
-    dbc.Row([
-            dbc.Col(html.Div(children=[
-                html.H1(children='LED'),
-                html.Button(img, id='led-image', n_clicks = 0),
-                html.P(children='Click the image to turn on the LED'),
-            ])),
-            dbc.Col(html.Div(children=[
-                html.H1(children='Current Light Intensity'),
-                html.Img(src=app.get_asset_url('light_intensity.png'),width='30%', height='30%'),
+
+cardLedBox = dbc.Card([
+    dbc.CardHeader([
+        html.H2("LED", className="card-title, text-center")
+    ]),
+    dbc.CardBody([
+        html.Button(img, id='led-image', n_clicks = 0, className = "btn btn-primary-outline"),
+        html.P(children='Click the image to turn on the LED'),
+    ]), 
+], color="dark", outline=True);
+
+cardLighIntensity = dbc.Card([
+    dbc.CardHeader([
+        html.H2("Light Intensity", className="card-title, text-center")
+    ]),
+    dbc.CardBody([
+        html.H5("Current Light Intensity", className="card-title"),
+        html.Img(src=app.get_asset_url('light_intensity.png'),width='30%', height='30%'),
                 dbc.Input(
                     size="lg",
                     id='light-intensity-value',
-                    className="mb-3",
-                    value="The light intensity is " + str(current_light_intensity),
+                    className="mb-2",
+                    value="The light intensity is " + str(current_light_intensity), # + isItOn,
                     readonly = True,
                     style = {
                         'text-align': 'center',
-                        'margin-top': '2%',
-                        'margin-right': '5%',
-                        'margin-left': '5%'
+                       # 'margin-top': '2%',
+                        # 'margin-right': '5%',
+                        # 'margin-left': '5%',
+                        'width' : '100%',
                     }
                 )
-            ]))        
-        ])
-])
+    ]), 
+],color="dark", outline=True);
 
-humidTempTab = html.Div(className='grid-container', children=[
-                dbc.Row([
+cardHumidTemp = dbc.Card([
+    dbc.CardHeader([
+        html.H2("Humnidy and Temputure", className="card-title, text-center")
+    ]),
+    dbc.CardBody([
+           #dbc.Row([
                     dbc.Col(html.Div(id='humidity', children=[
                         daq.Gauge(
                         color={"gradient":True,"ranges":{"yellow":[0,30],"green":[30,50],"red":[50,100]}},
@@ -184,17 +198,27 @@ humidTempTab = html.Div(className='grid-container', children=[
                         value=False,
                         label=['Celsius', 'Fahrenheit'],
                         labelPosition='bottom',
-                        color = '#0C6E87'
+                        color = '#0C6E87',
+                        style={
+                            "margin": "5%"
+                        }
                         )
-                    ])),       
-                ])
-            ])
+                    ]))       
+            #   ])
+     ]) 
+ ],color="dark", outline=True );
 
-fanControlTab =  html.Div(className='grid-container',children=[
-                html.Div(style={'text-align': 'center'},children=[
-                    html.Img(src=app.get_asset_url('fan.png'), width='15%', height='15%')
-                ]),
-                daq.ToggleSwitch(
+cardFanControlTab= dbc.Card([
+    dbc.CardHeader([
+        html.H2("Fan", className="card-title, text-center")
+    ]),
+    dbc.CardBody([
+        html.Img(src=app.get_asset_url('fan.png'),width='35%', height='35%', 
+                style={
+                    "margin": "5%"
+                } 
+                ),
+        daq.ToggleSwitch(
                 size=100,
                 id='fan-toggle',
                 value=False,
@@ -202,38 +226,32 @@ fanControlTab =  html.Div(className='grid-container',children=[
                 labelPosition='bottom',
                 color = '#0C6E87', 
                 style={
-                    'margin-top': '3%'
+                    "margin": "2%"
                 }
-                ),
-            ])
+                )
+    ]), 
+], color="dark", outline=True);
 
-tabs = dcc.Tabs([
-        dcc.Tab(className='custom-tab', label='LED Control', children=[
-            ledBoxTab
-        ]),
-        dcc.Tab(className='custom-tab', label='Humidity & Temperature', children=[
-            humidTempTab
-        ]),
-        dcc.Tab(className='custom-tab', label='Fan Control', children=[
-            fanControlTab
-        ]),
-    ], colors={
-        "border": "#14397d",
-        "primary": "#77b5b9",
-        "background": "#d7eaf3"
-    })
+content = html.Div([
+            html.H1(children='Welcome to IoT Dashboard', style={'text-align': 'center', 'margin': '2%'}),
+            dbc.Container([
+                dbc.Row([
+                    dbc.Col(html.Div([
+                            dbc.Row([
+                                dbc.Col(cardLedBox, width=6, align="start", style={"height": "100%"}),
+                                dbc.Col(cardFanControlTab, width=6 ,align="start", style={"height": "100%"})
+                                ]),
+                            dbc.Row([
+                                dbc.Col(cardLighIntensity, width=12 ,align="start", style={"height": "100%"})
+                                ])
+                            ])
+                        ),
+                    dbc.Col(cardHumidTemp, width=5,align="start", style={"height": "100%"})           
+                ])
+            ])     
+        ], className="content");
 
-
-
-app.layout = html.Div(id="theme-switch-div", children=[
-    navbar,
-    html.H1(children='Welcome to IoT Dashboard', style={'text-align': 'center', 'margin-top': '3%'}),
-
-    html.Div(className='grid-container', style={'margin': '5% 7% 5% 7%'}, children=[
-        tabs
-    ]),
-    dcc.Interval(id='interval-component', interval=1*1500, n_intervals=0)
-])
+app.layout = html.Div(id="theme-switch-div", children=[navbar, content]);
 
 def create_connection(db_file):
     conn = None
