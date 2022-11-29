@@ -11,6 +11,7 @@ import imaplib
 import easyimap as imap
 import email
 from Emails import *  
+from scanner import *
 #import paho.mqtt.client as mqtt
 import random
 from paho.mqtt import client as mqtt_client
@@ -428,10 +429,11 @@ def logIn():
         cur.close()
         
 def main():    
+    global no_current_devices
+    no_current_devices = scan(-50)
     client = connect_mqtt()
     subscribe(client)
     client.loop_start()
-
     app.run_server(debug=True, host='localhost', port=8050)    
   
 main()
