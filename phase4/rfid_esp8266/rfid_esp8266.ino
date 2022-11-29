@@ -10,9 +10,11 @@ MFRC522::MIFARE_Key key;
 // Init array that will store new NUID
 byte nuidPICC[4];
 
-const char *ssid = "DucWifi 2.4GHz";
-const char *password = "Admin199z";
-const char *mqtt_server = "192.168.0.65";
+//const char *ssid = "DucWifi 2.4GHz";
+//const char *password = "Admin199z";
+const char *ssid = "SM-N950W0807";
+const char *password = "nuqt0826";
+const char *mqtt_server = "192.168.42.84";
 WiFiClient vanieriot;
 PubSubClient client(vanieriot);
 
@@ -108,14 +110,30 @@ void loop()
   }
   if (!client.loop())
     client.connect("vanieriot");
-    
+
+  now = millis();
+  if (now - lastMeasure > 5000)
+  {
+    lastMeasure = now;
+    float t = analogRead(pin1);
+
+    static char res[7];
+    dtostrf(t, 6, 0, res);
+    client.publish("/IoTlab/status", res);
+
+    Serial.print("Intensity is: ");
+    Serial.print(t);
+    Serial.println("");
+  }
+  
   // put your main code here, to run repeatedly:
   // Reset the loop if no new card present on the sensor/reader. This saves the entire process when idle.
   if (!rfid.PICC_IsNewCardPresent())
     return;
-  // Verify if the NUID has been readed
+  // Verify if the NUID has been read
   if (!rfid.PICC_ReadCardSerial())
     return;
+    
   Serial.print(F("PICC type: "));
   MFRC522::PICC_Type piccType = rfid.PICC_GetType(rfid.uid.sak);
   Serial.println(rfid.PICC_GetTypeName(piccType));
@@ -159,21 +177,6 @@ void loop()
   rfid.PICC_HaltA();
   // Stop encryption on PCD
   rfid.PCD_StopCrypto1();
-
-  now = millis();
-  if (now - lastMeasure > 5000)
-  {
-    lastMeasure = now;
-    float t = analogRead(pin1);
-
-    static char res[7];
-    dtostrf(t, 6, 0, res);
-    client.publish("/IoTlab/status", res);
-
-    Serial.print("Intensity is: ");
-    Serial.print(t);
-    Serial.println("");
-  }
 }
 /**
  Helper routine to dump a byte array as hex values to Serial.

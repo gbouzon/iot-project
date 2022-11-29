@@ -47,8 +47,12 @@ GPIO.setup(Motor3,GPIO.OUT, initial=GPIO.LOW)
 global current_light_intensity
 current_light_intensity = "NaN"
 
-global tagID;
+global tagID, username, uTempThreshold, uHumidityThreshold, uLightIntensity
 tagID = "NaN"
+username = ""
+uTempThreshold = 0.0
+uHumidityThreshold = 0
+uLightIntensity = 0
 
 # This works as long as the arduino code is running (change broker)
 broker = '192.168.0.65'
@@ -93,22 +97,22 @@ offcanvas = html.Div(
                 dbc.Row(
                 [
                     dbc.Col(html.Div("Name: ")),
-                    dbc.Col(html.Div(dbc.Input(placeholder="username", size="md", className="mb-3", readonly=True))),
+                    dbc.Col(html.Div(dbc.Input(id="username", placeholder="username", size="md", className="mb-3", readonly=True))),
                 ]),
                 dbc.Row(
                 [
                     dbc.Col(html.Div("Ideal Temperature: ")),
-                    dbc.Col(html.Div(dbc.Input(placeholder="ideal_temp", size="md", className="mb-3", readonly=True))),
+                    dbc.Col(html.Div(dbc.Input(id="tempThreshold",placeholder="ideal_temp", size="md", className="mb-3", readonly=True))),
                 ]),
                 dbc.Row(
                 [
                     dbc.Col(html.Div("Ideal Humidity: ")),
-                    dbc.Col(html.Div(dbc.Input(placeholder="ideal_humidity", size="md", className="mb-3", readonly=True))),
+                    dbc.Col(html.Div(dbc.Input(id="humidityThreshold",placeholder="ideal_humidity", size="md", className="mb-3", readonly=True))),
                 ]),
                 dbc.Row(
                 [
                     dbc.Col(html.Div("Ideal light intensity: ")),
-                    dbc.Col(html.Div(dbc.Input(placeholder="ideal_light_intensity", size="md", className="mb-3", readonly=True))),
+                    dbc.Col(html.Div(dbc.Input(id='lightIntensity',placeholder="ideal_light_intensity", size="md", className="mb-3", readonly=True))),
                 ]),
                 dbc.Row(
                 [   
@@ -297,11 +301,10 @@ def toggle_fan(value):
               Input('interval-component', 'n_intervals'),
               Input('temp-toggle', 'value'))
 def update_sensor(n, tValue):
-    global emailSent
-    global emailReceived
+    global emailSent, emailReceived, uTempThreshold
     dht.readDHT11()
     temperatureValue = dht.temperature
-    if temperatureValue > 24 and not emailSent:
+    if temperatureValue > float(uTempThreshold) and not emailSent:
         send_email("Temperature is High", "Would you like to start the fan?")
         emailSent = True
     elif receive_email() and emailReceived < 1:
@@ -367,7 +370,7 @@ def subscribe(client: mqtt_client):
             else:
                 GPIO.output(ledPin, GPIO.LOW)
                 
-                #emailSent = False
+                emailSent = False
                 
             global current_light_intensity
             current_light_intensity = msg.payload.decode()
@@ -385,11 +388,16 @@ def subscribe(client: mqtt_client):
 
 
 @app.callback(Output('light-intensity-value', 'value'),
+              Output('username', 'value'),
+              Output('tempThreshold', 'value'),
+              Output('humidityThreshold', 'value'),
+              Output('lightIntensity', 'value'),
               Input('interval-component', 'n_intervals'))
 def update_light_intensity(n):
     return 'The  light intensity is:' + str(current_light_intensity)
 
 def logIn():
+    global username, uTempThreshold, uHumidityThreshold, uLightIntensity 
     db_file = "smarthome_db"
     conn = create_connection(db_file)
     cur = conn.cursor()
@@ -401,12 +409,19 @@ def logIn():
         if not user:
             print("log in failed")
         else:
-            print("card found")
+            username = user[1]
+            uTempThreshold = user[2]
+            uHumidityThreshold = user[3]
+            uLightIntensity = user[4]
+#             str, str, float, int, int
+#             userID, name, tempThreshold, humidityThreshold, lightIntensity
+            print(username, uTempThreshold, uHumidityThreshold, uLightIntensity)
+    
             if(logInEmailSent): #maybe need to change the User[1] 
                 # email would not be albe to resend if other user is login in after(same session)
                 time = datetime.now(pytz.timezone('America/New_York'))
                 currtime = time.strftime("%H:%M")
-                send_email("LogIn", user[1] + "entered at" + currtime)
+                send_email("LogIn", username + "entered at" + currtime)
     
     finally:
         cur.close()
