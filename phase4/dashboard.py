@@ -55,7 +55,7 @@ uHumidityThreshold = 0
 uLightIntensity = 0
 
 # This works as long as the arduino code is running (change broker)
-broker = '192.168.0.65'
+broker = '192.168.42.84'
 port = 1883
 topic = "/IoTlab/status"
 topic2 = "/IoTlab/readTag"
@@ -355,17 +355,18 @@ def connect_mqtt() -> mqtt_client:
 
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
+        global username, uTempThreshold, uHumidityThreshold, uLightIntensity 
         if (msg.topic == topic):
             print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
-            if(int(msg.payload.decode()) <= 400):
+            if(int(msg.payload.decode()) <= int(uLightIntensity)):
                 GPIO.output(ledPin, GPIO.HIGH)
                 
                 #uncomment for the email sent, with mine there are some issues but it seems to be the correct format (don't want to spam)
                 #time = datetime.now(pytz.timezone('America/New_York'))
                 #currtime = time.strftime("%H:%M")
-                #send_email("Light", "The Light is ON at " + currtime + ".")
-                #emailSent = True
+#                 send_email("Light", "The Light is ON")
+#                 emailSent = True
                 
             else:
                 GPIO.output(ledPin, GPIO.LOW)
@@ -394,7 +395,7 @@ def subscribe(client: mqtt_client):
               Output('lightIntensity', 'value'),
               Input('interval-component', 'n_intervals'))
 def update_light_intensity(n):
-    return 'The  light intensity is:' + str(current_light_intensity)
+    return 'The  light intensity is:' + str(current_light_intensity), username, uTempThreshold, uHumidityThreshold, uLightIntensity 
 
 def logIn():
     global username, uTempThreshold, uHumidityThreshold, uLightIntensity 
