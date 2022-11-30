@@ -109,6 +109,21 @@ void loop()
   if (!client.loop())
     client.connect("vanieriot");
     
+  now = millis();
+  if (now - lastMeasure > 5000)
+  {
+    lastMeasure = now;
+    float t = analogRead(pin1);
+
+    static char res[7];
+    dtostrf(t, 6, 0, res);
+    client.publish("/IoTlab/status", res);
+
+    Serial.print("Intensity is: ");
+    Serial.print(t);
+    Serial.println("");
+  }
+  
   // put your main code here, to run repeatedly:
   // Reset the loop if no new card present on the sensor/reader. This saves the entire process when idle.
   if (!rfid.PICC_IsNewCardPresent())
@@ -162,20 +177,6 @@ void loop()
   // Stop encryption on PCD
   rfid.PCD_StopCrypto1();
 
-  now = millis();
-  if (now - lastMeasure > 5000)
-  {
-    lastMeasure = now;
-    float t = analogRead(pin1);
-
-    static char res[7];
-    dtostrf(t, 6, 0, res);
-    client.publish("/IoTlab/status", res);
-
-    Serial.print("Intensity is: ");
-    Serial.print(t);
-    Serial.println("");
-  }
 }
 /**
  Helper routine to dump a byte array as hex values to Serial.

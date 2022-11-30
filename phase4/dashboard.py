@@ -22,18 +22,13 @@ import pytz
 import sqlite3
 from sqlite3 import Error
 
-# connect to db 'smarthomedb'
-# conn = sqlite3.connect('smarthomedb')
-# cursor = conn.cursor()
-# cursor.execute('SELECT * FROM user_info WHERE userId = 1')
-
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
 ledPin = 21
 GPIO.setup(ledPin, GPIO.OUT)
 
-DHTPin = 17 #define the pin of DHT11 - physical pin, not GPIO pin
+DHTPin = 17 #define the pin of DHT11
 dht = DHT.DHT(DHTPin) #create a DHT class object
 dht.readDHT11()
 
@@ -47,6 +42,9 @@ GPIO.setup(Motor3,GPIO.OUT, initial=GPIO.LOW)
 
 global current_light_intensity
 current_light_intensity = "NaN"
+
+global no_current_devices
+no_current_devices = "NaN"
 
 global tagID, username, uTempThreshold, uHumidityThreshold, uLightIntensity
 tagID = "NaN"
@@ -239,6 +237,43 @@ cardFanControlTab= dbc.Card([
     ]), 
 ], color="dark", outline=True);
 
+bluetoothDevicesCard = dbc.Card(
+    [dbc.CardBody(
+            [
+                html.H4("Detect Bluetooth devices", className="card-title"),
+                dbc.Input(
+                    size="lg",
+                    id = "bluetooth-devices-input",
+                    className="mb-2",
+                    value="Bluetooth devices nearby: " + str(no_current_devices),
+                    readonly = True,
+                    style = {
+                        'text-align': 'center',
+                       # 'margin-top': '2%',
+                        # 'margin-right': '5%',
+                        # 'margin-left': '5%',
+                        'width' : '100%',
+                    }
+                ),
+                dbc.Input(
+                    size="lg",
+                    className="mb-2",
+                    value="RSSI THreshold (dBm) " + str(-50),
+                    readonly = True,
+                    style = {
+                        'text-align': 'center',
+                       # 'margin-top': '2%',
+                        # 'margin-right': '5%',
+                        # 'margin-left': '5%',
+                        'width' : '100%',
+                    }
+                )
+            ]
+        )
+    ],
+    color="dark", outline=True 
+)
+
 content = html.Div([
             html.H1(children='Welcome to IoT Dashboard', style={'text-align': 'center', 'margin': '2%'}),
             dbc.Container([
@@ -254,11 +289,16 @@ content = html.Div([
                             ])
                         ),
                     dbc.Col(cardHumidTemp, width=5,align="start", style={"height": "100%"})           
-                ])
+                ]),
+                 dbc.Row(bluetoothDevicesCard)
             ])     
         ], className="content");
 
-app.layout = html.Div(id="theme-switch-div", children=[navbar, content]);
+app.layout = html.Div(id="theme-switch-div", children=[
+    navbar, 
+    content,
+    dcc.Interval(id='interval-component', interval=1*1500, n_intervals=0)
+]);
 
 def create_connection(db_file):
     conn = None
@@ -394,9 +434,17 @@ def subscribe(client: mqtt_client):
               Output('tempThreshold', 'value'),
               Output('humidityThreshold', 'value'),
               Output('lightIntensity', 'value'),
+              Output('bluetooth-devices-input', 'value'),
               Input('interval-component', 'n_intervals'))
-def update_light_intensity(n):
-    return 'The  light intensity is:' + str(current_light_intensity), username, uTempThreshold, uHumidityThreshold, uLightIntensity 
+def update_light_intensity_user_info(n):
+    return 'The  light intensity is:' + str(current_light_intensity), username, uTempThreshold, uHumidityThreshold, uLightIntensity, "Bluetooth devices nearby: " + str(no_current_devices)
+
+# bluetooth-devices-input
+# @app.callback(Output('bluetooth-devices-input', 'value'),
+#               Input('interval-component', 'n_intervals'))
+# def update_bluetooth_devices(n):
+#     # no_current_devices = getNumOfBlDevices()
+#     return 'Bluetooth devices nearby: ' + str(no_current_devices)
 
 def logIn():
     global username, uTempThreshold, uHumidityThreshold, uLightIntensity 
