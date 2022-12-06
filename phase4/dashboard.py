@@ -2,6 +2,7 @@ import dash.dependencies
 import dash_daq as daq
 from dash import html, Input, Output, dcc, Dash, State
 import dash_bootstrap_components as dbc
+from dash_bootstrap_templates import load_figure_template
 from dash_bootstrap_templates import ThemeChangerAIO
 import RPi.GPIO as GPIO
 import time
@@ -54,7 +55,9 @@ uHumidityThreshold = 0
 uLightIntensity = 0
 
 # This works as long as the arduino code is running (change broker)
-broker = '192.168.42.84'
+#broker = '192.168.42.84'
+broker = '172.20.10.14'
+
 port = 1883
 topic = "/IoTlab/status"
 topic2 = "/IoTlab/readTag"
@@ -62,7 +65,10 @@ topic2 = "/IoTlab/readTag"
 client_id = f'python-mqtt-{random.randint(0, 100)}'
 
 
-app = Dash(__name__)
+
+app = Dash(__name__, external_stylesheets=[dbc.themes.FLATLY])
+load_figure_template("flatly")
+
 img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='40%', height='40%')
 userPhoto = html.Img(src=app.get_asset_url('avatar.png'),width='15%', height='15%', style={'border-radius': '50%'})
 humidityValue = 0
@@ -70,7 +76,7 @@ temperatureValue = 0
 tempUnit = 'Celsius'
 emailSent = False
 emailReceived = 0
-logInEmailSent = False;
+flag = False
 
 
 source_address = 'pi.iotnotificationservices@gmail.com'
@@ -157,14 +163,14 @@ cardLighIntensity = dbc.Card([
                     size="lg",
                     id='light-intensity-value',
                     className="mb-2",
-                    value="The light intensity is " + str(current_light_intensity), # + isItOn,
+                    value="The light intensity is " + str(current_light_intensity), 
                     readonly = True,
                     style = {
                         'text-align': 'center',
                        # 'margin-top': '2%',
                         # 'margin-right': '5%',
                         # 'margin-left': '5%',
-                        'width' : '100%',
+                        #'width' : '100%',
                     }
                 )
     ]), 
@@ -172,7 +178,7 @@ cardLighIntensity = dbc.Card([
 
 cardHumidTemp = dbc.Card([
     dbc.CardHeader([
-        html.H2("Humnidy and Temputure", className="card-title, text-center")
+        html.H2("Humidity and Temperature", className="card-title, text-center")
     ]),
     dbc.CardBody([
            #dbc.Row([
@@ -252,22 +258,14 @@ bluetoothDevicesCard = dbc.Card(
                        # 'margin-top': '2%',
                         # 'margin-right': '5%',
                         # 'margin-left': '5%',
-                        'width' : '100%',
+#                         'width' : '100%',
                     }
                 ),
-                dbc.Input(
-                    size="lg",
-                    className="mb-2",
-                    value="RSSI THreshold (dBm) " + str(-50),
-                    readonly = True,
-                    style = {
-                        'text-align': 'center',
-                       # 'margin-top': '2%',
-                        # 'margin-right': '5%',
-                        # 'margin-left': '5%',
-                        'width' : '100%',
-                    }
-                )
+                html.Div(children=[
+                    dcc.Input(id='input-on-submit', type='text'),
+                    html.Button('Submit', id='submit-val', n_clicks=0)]),
+                     html.Div(id='container-button-basic', children='Enter a value and press submit')
+                
             ]
         )
     ],
@@ -275,30 +273,47 @@ bluetoothDevicesCard = dbc.Card(
 )
 
 content = html.Div([
+            navbar, 
             html.H1(children='Welcome to IoT Dashboard', style={'text-align': 'center', 'margin': '2%'}),
             dbc.Container([
                 dbc.Row([
                     dbc.Col(html.Div([
                             dbc.Row([
-                                dbc.Col(cardLedBox, width=6, align="start", style={"height": "100%"}),
-                                dbc.Col(cardFanControlTab, width=6 ,align="start", style={"height": "100%"})
-                                ]),
+                                dbc.Col(cardLedBox, width=6, align="start"),
+                                dbc.Col(cardFanControlTab, width=6 ,align="start")
+                                ], style = {'min-height': '50%'}),
                             dbc.Row([
-                                dbc.Col(cardLighIntensity, width=12 ,align="start", style={"height": "100%"})
-                                ])
+                                dbc.Col(cardLighIntensity, width=12 ,align="start", style = {'min-height': '30%'})
+                                ], style = {'min-height': '50%'})
                             ])
                         ),
-                    dbc.Col(cardHumidTemp, width=5,align="start", style={"height": "100%"})           
+                    dbc.Col(cardHumidTemp, width=5,align="start",  style = {'min-height': '50%'})           
                 ]),
-                 dbc.Row(bluetoothDevicesCard)
+                 dbc.Row(bluetoothDevicesCard,  style = {'min-height': '50%'})
             ])     
         ], className="content");
 
 app.layout = html.Div(id="theme-switch-div", children=[
-    navbar, 
-    content,
-    dcc.Interval(id='interval-component', interval=1*1500, n_intervals=0)
-]);
+    # navbar, 
+        content,
+        dcc.Interval(id='interval-component', interval=3*1000, n_intervals=0)
+        ]);
+    
+@app.callback(
+    Output('container-button-basic', 'children'),
+    Output('bluetooth-devices-input', 'value'),
+    Input('submit-val', 'n_clicks'),
+    State('input-on-submit', 'value')
+)
+def update_output(n_clicks, value):
+    global no_current_devices
+    if value is None:
+        no_current_devices = "None"
+    else:
+        no_current_devices = scan(int(value))
+    return 'The RSSI is "{}"'.format(
+        value
+    ), "Bluetooth devices nearby: " + str(no_current_devices)
 
 def create_connection(db_file):
     conn = None
@@ -315,11 +330,11 @@ def create_connection(db_file):
 def update_output(n_clicks):
     if n_clicks % 2 == 1:
         GPIO.output(ledPin, GPIO.HIGH)
-        img = html.Img(src=app.get_asset_url('lightbulb_on.png'), width='200px', height='200px')
+        img = html.Img(src=app.get_asset_url('lightbulb_off.png'), width='200px', height='200px')
         return img
     else:
         GPIO.output(ledPin, GPIO.LOW)
-        img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='200px', height='200px')
+        img = html.Img(src=app.get_asset_url('lightbulb_on.png'),width='200px', height='200px')
         return img
        
 
@@ -343,16 +358,18 @@ def toggle_fan(value):
               Input('temp-toggle', 'value'))
 def update_sensor(n, tValue):
     global emailSent, emailReceived, uTempThreshold
+    emailReceivedContent = receive_email();
     dht.readDHT11()
     temperatureValue = dht.temperature
     if temperatureValue > float(uTempThreshold) and not emailSent:
         send_email("Temperature is High", "Would you like to start the fan?")
         emailSent = True
-    elif receive_email() and emailReceived < 1:
+    elif emailReceivedContent is not None and emailReceived < 1:
         emailReceived = 1
-        toggle_fan(True)
-        time.sleep(5)
-        toggle_fan(False)
+        if emailReceivedContent == "yes":
+            toggle_fan(True)
+            time.sleep(5)
+            toggle_fan(False)
     elif temperatureValue < 22:
         toggle_fan(False)
         emailSent = False
@@ -396,23 +413,22 @@ def connect_mqtt() -> mqtt_client:
 
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
-        global username, uTempThreshold, uHumidityThreshold, uLightIntensity 
+        global username, uTempThreshold, uHumidityThreshold, uLightIntensity, flag 
         if (msg.topic == topic):
             print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
-            if(int(msg.payload.decode()) <= int(uLightIntensity)):
+            if(int(msg.payload.decode()) <= int(uLightIntensity)) :
                 GPIO.output(ledPin, GPIO.HIGH)
-                
-                #uncomment for the email sent, with mine there are some issues but it seems to be the correct format (don't want to spam)
-                #time = datetime.now(pytz.timezone('America/New_York'))
-                #currtime = time.strftime("%H:%M")
-#                 send_email("Light", "The Light is ON")
-#                 emailSent = True
+                if(not flag):
+                    #uncomment for the email sent, with mine there are some issues but it seems to be the correct format (don't want to spam)
+                    time = datetime.now(pytz.timezone('America/New_York'))
+                    currtime = time.strftime("%H:%M")
+                    send_email("Light", "The Light is ON")
+                    flag = True
                 
             else:
                 GPIO.output(ledPin, GPIO.LOW)
-                
-                emailSent = False
+                flag = False
                 
             global current_light_intensity
             current_light_intensity = msg.payload.decode()
@@ -434,17 +450,9 @@ def subscribe(client: mqtt_client):
               Output('tempThreshold', 'value'),
               Output('humidityThreshold', 'value'),
               Output('lightIntensity', 'value'),
-              Output('bluetooth-devices-input', 'value'),
               Input('interval-component', 'n_intervals'))
 def update_light_intensity_user_info(n):
-    return 'The  light intensity is:' + str(current_light_intensity), username, uTempThreshold, uHumidityThreshold, uLightIntensity, "Bluetooth devices nearby: " + str(no_current_devices)
-
-# bluetooth-devices-input
-# @app.callback(Output('bluetooth-devices-input', 'value'),
-#               Input('interval-component', 'n_intervals'))
-# def update_bluetooth_devices(n):
-#     # no_current_devices = getNumOfBlDevices()
-#     return 'Bluetooth devices nearby: ' + str(no_current_devices)
+    return 'The  light intensity is:' + str(current_light_intensity), username, uTempThreshold, uHumidityThreshold, uLightIntensity
 
 def logIn():
     global username, uTempThreshold, uHumidityThreshold, uLightIntensity 
@@ -467,18 +475,15 @@ def logIn():
 #             userID, name, tempThreshold, humidityThreshold, lightIntensity
             print(username, uTempThreshold, uHumidityThreshold, uLightIntensity)
     
-            if(logInEmailSent): #maybe need to change the User[1] 
-                # email would not be albe to resend if other user is login in after(same session)
-                time = datetime.now(pytz.timezone('America/New_York'))
-                currtime = time.strftime("%H:%M")
-                send_email("LogIn", username + "entered at" + currtime)
+            time = datetime.now(pytz.timezone('America/New_York'))
+            currtime = time.strftime("%H:%M")
+            send_email("Log In", username + " entered at " + currtime)
+            
     
     finally:
         cur.close()
         
-def main():    
-    global no_current_devices
-    no_current_devices = scan(-50)
+def main():
     client = connect_mqtt()
     subscribe(client)
     client.loop_start()

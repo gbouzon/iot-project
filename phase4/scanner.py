@@ -25,7 +25,7 @@ def scan(rssi_threshold):
     
             # add device addr, addType and rssi to devices_m
             devices_m.append({'addr': dev.addr, 'addType': dev.addrType, 'rssi': dev.rssi, 'name': name, 'power': power})
-            if dev.rssi < rssi_threshold:
+            if dev.rssi > rssi_threshold:
                 devices_threshold.append({'addr': dev.addr, 'addType': dev.addrType, 'rssi': dev.rssi, 'name': name, 'power': power})
                 
         # standard print

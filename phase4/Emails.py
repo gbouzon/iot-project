@@ -3,9 +3,17 @@ import ssl
 import smtplib
 import email
 import imaplib
+from datetime import datetime
+import pytz
+
+EMAIL = "danichhang@gmail.com";
+PASSWORD = "ivtinrmrsxoxemdr";
+SERVER = 'imap.gmail.com'
 
 source_address = 'pi.iotnotificationservices@gmail.com'
-dest_address = 'ga@bouzon.com.br'
+#source_address = 'danichhang@gmail.com';
+dest_address = 'ga@bouzon.com.br';
+#password = 'ivtinrmrsxoxemdr';
 password = 'uuoe gtxq zccp yzgp'
 imap_srv = 'imap.gmail.com'
 imap_port = 993
@@ -53,4 +61,5 @@ def receive_email():
                 else:
                     mail_content = message.get_payload().lower()
                 print(mail_content)
-                return "yes" in mail_content.lower()
+                return "yes" if "yes" in mail_content.lower() else "no"
+
