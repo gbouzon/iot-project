@@ -88,6 +88,7 @@ imap_port = 993
 
 theme_change = ThemeChangerAIO(aio_id="theme");
 
+
 offcanvas = html.Div(
     [
         dbc.Button(
@@ -176,13 +177,12 @@ cardLighIntensity = dbc.Card([
     ]), 
 ],color="dark", outline=True);
 
-cardHumidTemp = dbc.Card([
+cardTemp = dbc.Card([
     dbc.CardHeader([
-        html.H2("Humidity and Temperature", className="card-title, text-center")
+        html.H2("Light Intensity", className="card-title, text-center")
     ]),
     dbc.CardBody([
-           #dbc.Row([
-                    dbc.Col(html.Div(id='humidity', children=[
+        html.Div(id='humidity', children=[
                         daq.Gauge(
                         color={"gradient":True,"ranges":{"yellow":[0,30],"green":[30,50],"red":[50,100]}},
                         id='humidity-gauge',
@@ -193,8 +193,16 @@ cardHumidTemp = dbc.Card([
                         max=100,
                         min=0
                         )
-                    ])),
-                    dbc.Col(html.Div(id='temperature', children=[
+                    ])
+    ]), 
+],color="dark", outline=True);
+
+cardHumid = dbc.Card([
+    dbc.CardHeader([
+        html.H4("Humidity", className="card-title, text-center")
+    ]),
+    dbc.CardBody([
+        html.Div(id='temperature', children=[
                         daq.Thermometer(
                         id='temperature-thermometer',
                         label='Current temperature',
@@ -214,14 +222,13 @@ cardHumidTemp = dbc.Card([
                             "margin": "5%"
                         }
                         )
-                    ]))       
-            #   ])
-     ]) 
- ],color="dark", outline=True );
+                    ])
+    ]), 
+],color="dark", outline=True);
 
 cardFanControlTab= dbc.Card([
     dbc.CardHeader([
-        html.H2("Fan", className="card-title, text-center")
+        html.H2("Fan Status", className="card-title, text-center")
     ]),
     dbc.CardBody([
         html.Img(src=app.get_asset_url('fan.png'),width='35%', height='35%', 
@@ -230,10 +237,10 @@ cardFanControlTab= dbc.Card([
                 } 
                 ),
         daq.ToggleSwitch(
-                size=100,
+                size=40,
                 id='fan-toggle',
                 value=False,
-                label='Fan Status',
+                label=['off', 'on'],
                 labelPosition='bottom',
                 color = '#0C6E87', 
                 style={
@@ -243,22 +250,20 @@ cardFanControlTab= dbc.Card([
     ]), 
 ], color="dark", outline=True);
 
-bluetoothDevicesCard = dbc.Card(
-    [dbc.CardBody(
+bluetoothDevicesCard = dbc.Card([
+        dbc.CardHeader([
+            html.H4("Detect Bluetooth devices", className="card-title"),
+        ]),
+        dbc.CardBody(
             [
-                html.H4("Detect Bluetooth devices", className="card-title"),
                 dbc.Input(
-                    size="lg",
+                    size="md",
                     id = "bluetooth-devices-input",
                     className="mb-2",
                     value="Bluetooth devices nearby: " + str(no_current_devices),
                     readonly = True,
                     style = {
                         'text-align': 'center',
-                       # 'margin-top': '2%',
-                        # 'margin-right': '5%',
-                        # 'margin-left': '5%',
-#                         'width' : '100%',
                     }
                 ),
                 html.Div(children=[
@@ -274,7 +279,7 @@ bluetoothDevicesCard = dbc.Card(
 
 content = html.Div([
             navbar, 
-            html.H1(children='Welcome to IoT Dashboard', style={'text-align': 'center', 'margin': '2%'}),
+            html.H1(children='Welcome to IoT Dashboard', style={'text-align': 'center', 'margin': '2rem'}),
             dbc.Container([
                 dbc.Row([
                     dbc.Col(html.Div([
@@ -283,21 +288,23 @@ content = html.Div([
                                 dbc.Col(cardFanControlTab, width=6 ,align="start")
                                 ], style = {'min-height': '50%'}),
                             dbc.Row([
-                                dbc.Col(cardLighIntensity, width=12 ,align="start", style = {'min-height': '30%'})
-                                ], style = {'min-height': '50%'})
-                            ])
-                        ),
-                    dbc.Col(cardHumidTemp, width=5,align="start",  style = {'min-height': '50%'})           
+                                dbc.Col(cardLighIntensity, width=6 ,align="start"),
+                                dbc.Col(bluetoothDevicesCard,  width=6 ,align="start")
+                                ], style = {'min-height': '15rem'}),
+
+                 ])),
+                    dbc.Col(dbc.Row([
+                                dbc.Col(cardTemp, width=6 ,align="start"),
+                                dbc.Col(cardHumid,  width=6 ,align="start")
+                                ], style = {'min-height': '15rem'}),)           
                 ]),
-                 dbc.Row(bluetoothDevicesCard,  style = {'min-height': '50%'})
             ])     
         ], className="content");
 
 app.layout = html.Div(id="theme-switch-div", children=[
-    # navbar, 
-        content,
-        dcc.Interval(id='interval-component', interval=3*1000, n_intervals=0)
-        ]);
+    content,
+    dcc.Interval(id='interval-component', interval=3*1000, n_intervals=0)
+    ]);
     
 @app.callback(
     Output('container-button-basic', 'children'),
