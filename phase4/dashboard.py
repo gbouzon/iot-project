@@ -66,8 +66,7 @@ client_id = f'python-mqtt-{random.randint(0, 100)}'
 
 
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.FLATLY])
-load_figure_template("flatly")
+theme_change = ThemeChangerAIO(aio_id="theme",  radio_props={"persistence": True,  "value": dbc.themes.LUX});
 
 img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='40%', height='40%')
 userPhoto = html.Img(src=app.get_asset_url('avatar.png'),width='15%', height='15%', style={'border-radius': '50%'})
@@ -167,11 +166,7 @@ cardLighIntensity = dbc.Card([
                     value="The light intensity is " + str(current_light_intensity), 
                     readonly = True,
                     style = {
-                        'text-align': 'center',
-                       # 'margin-top': '2%',
-                        # 'margin-right': '5%',
-                        # 'margin-left': '5%',
-                        #'width' : '100%',
+                        'text-align': 'center'
                     }
                 )
     ]), 
