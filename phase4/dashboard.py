@@ -175,7 +175,7 @@ cardLighIntensity = dbc.Card([
 
 cardTemp = dbc.Card([
     dbc.CardHeader([
-        html.H4("Light Intensity", className="card-title, text-center")
+        html.H4("Humidity", className="card-title, text-center")
     ]),
     dbc.CardBody([
         html.Div(id='humidity', children=[
@@ -196,7 +196,7 @@ cardTemp = dbc.Card([
 
 cardHumid = dbc.Card([
     dbc.CardHeader([
-        html.H4("Humidity", className="card-title, text-center")
+        html.H4("Temperature", className="card-title, text-center")
     ]),
     dbc.CardBody([
         html.Div(id='temperature', children=[
