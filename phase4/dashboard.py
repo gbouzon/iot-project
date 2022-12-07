@@ -65,10 +65,11 @@ topic2 = "/IoTlab/readTag"
 client_id = f'python-mqtt-{random.randint(0, 100)}'
 
 
-
+app = Dash(__name__)
 theme_change = ThemeChangerAIO(aio_id="theme",  radio_props={"persistence": True,  "value": dbc.themes.LUX});
 
-img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='40%', height='40%')
+
+img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='53%', height='54%')
 userPhoto = html.Img(src=app.get_asset_url('avatar.png'),width='15%', height='15%', style={'border-radius': '50%'})
 humidityValue = 0
 temperatureValue = 0
@@ -144,25 +145,25 @@ navbar = dbc.NavbarSimple(
 
 cardLedBox = dbc.Card([
     dbc.CardHeader([
-        html.H2("LED", className="card-title, text-center")
+        html.H4("LED", className="card-title, text-center")
     ]),
     dbc.CardBody([
         html.Button(img, id='led-image', n_clicks = 0, className = "btn btn-primary-outline"),
-        html.P(children='Click the image to turn on the LED'),
+        html.Div(children='Click the image to turn on the LED', style = {'font-size': '12px'})
     ]), 
 ], color="dark", outline=True);
 
 cardLighIntensity = dbc.Card([
     dbc.CardHeader([
-        html.H2("Light Intensity", className="card-title, text-center")
+        html.H4("Light Intensity", className="card-title, text-center")
     ]),
     dbc.CardBody([
         html.H5("Current Light Intensity", className="card-title"),
-        html.Img(src=app.get_asset_url('light_intensity.png'),width='30%', height='30%'),
+        html.Img(src=app.get_asset_url('light_intensity.png'),width='30%', height='31%'),
                 dbc.Input(
-                    size="lg",
+                    size="mb",
                     id='light-intensity-value',
-                    className="mb-2",
+                    className="mb",
                     value="The light intensity is " + str(current_light_intensity), 
                     readonly = True,
                     style = {
@@ -174,7 +175,7 @@ cardLighIntensity = dbc.Card([
 
 cardTemp = dbc.Card([
     dbc.CardHeader([
-        html.H2("Light Intensity", className="card-title, text-center")
+        html.H4("Light Intensity", className="card-title, text-center")
     ]),
     dbc.CardBody([
         html.Div(id='humidity', children=[
@@ -187,6 +188,7 @@ cardTemp = dbc.Card([
                         value=humidityValue,
                         max=100,
                         min=0
+                        
                         )
                     ])
     ]), 
@@ -216,6 +218,7 @@ cardHumid = dbc.Card([
                         style={
                             "margin": "5%"
                         }
+                        
                         )
                     ])
     ]), 
@@ -223,7 +226,7 @@ cardHumid = dbc.Card([
 
 cardFanControlTab= dbc.Card([
     dbc.CardHeader([
-        html.H2("Fan Status", className="card-title, text-center")
+        html.H4("Fan Status", className="card-title, text-center")
     ]),
     dbc.CardBody([
         html.Img(src=app.get_asset_url('fan.png'),width='35%', height='35%', 
@@ -252,7 +255,7 @@ bluetoothDevicesCard = dbc.Card([
         dbc.CardBody(
             [
                 dbc.Input(
-                    size="md",
+                    size="sm",
                     id = "bluetooth-devices-input",
                     className="mb-2",
                     value="Bluetooth devices nearby: " + str(no_current_devices),
@@ -262,38 +265,41 @@ bluetoothDevicesCard = dbc.Card([
                     }
                 ),
                 html.Div(children=[
-                    dcc.Input(id='input-on-submit', type='text'),
-                    html.Button('Submit', id='submit-val', n_clicks=0)]),
-                     html.Div(id='container-button-basic', children='Enter a value and press submit')
+                    dcc.Input(id='input-on-submit',type='text', style={'width':'50%', 'margin-right': '4%'}),
+                    html.Button('Submit', id='submit-val', n_clicks=0) ], style={'margin-top': '7%'}),
+                    html.Div(id='container-button-basic', children='Enter a value and press submit', style = {'font-size': '12px'})
                 
             ]
         )
     ],
-    color="dark", outline=True 
+    color="dark", outline=True, style ={'padding-bottom': '9%'} 
 )
 
 content = html.Div([
             navbar, 
-            html.H1(children='Welcome to IoT Dashboard', style={'text-align': 'center', 'margin': '2rem'}),
+            html.H1(children='Welcome to IoT Dashboard', style={'text-align': 'center', 'margin': '1rem'}),
             dbc.Container([
                 dbc.Row([
                     dbc.Col(html.Div([
                             dbc.Row([
-                                dbc.Col(cardLedBox, width=6, align="start"),
-                                dbc.Col(cardFanControlTab, width=6 ,align="start")
-                                ], style = {'min-height': '50%'}),
+                                dbc.Col(cardLedBox, width=6, align="start", className="h-100"),
+                                dbc.Col(cardFanControlTab, width=6 ,align="start", className="h-100")
+                                ], style = {'height': '100%', 'padding-bottom': '4%'}),
                             dbc.Row([
-                                dbc.Col(cardLighIntensity, width=6 ,align="start"),
-                                dbc.Col(bluetoothDevicesCard,  width=6 ,align="start")
-                                ], style = {'min-height': '15rem'}),
+                                dbc.Col(cardLighIntensity, width=6 ,align="start", className="h-100"),
+                                dbc.Col(bluetoothDevicesCard,  width=6 ,align="start", className="h-100")
+                                ], style = {'height': '100%', 'padding-bottom': '4%'}),
 
                  ])),
                     dbc.Col(dbc.Row([
-                                dbc.Col(cardTemp, width=6 ,align="start"),
-                                dbc.Col(cardHumid,  width=6 ,align="start")
-                                ], style = {'min-height': '15rem'}),)           
+                                dbc.Col(cardTemp, width=6 ,align="start", className="h-100"),
+                                dbc.Col(cardHumid,  width=6 ,align="start", className="h-100")
+                                ], style = {'height': '100%', 'padding-bottom': '4%'}))
+
+                    ])
+                                          
                 ]),
-            ])     
+            # ])     
         ], className="content");
 
 app.layout = html.Div(id="theme-switch-div", children=[
