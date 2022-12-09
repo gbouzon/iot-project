@@ -10,15 +10,15 @@ MFRC522::MIFARE_Key key;
 // Init array that will store new NUID
 byte nuidPICC[4];
 
-//const char *ssid = "SM-N950W0807";
-//const char *password = "nuqt0826";
-//const char *mqtt_server = "192.168.42.84";
+// const char *ssid = "SM-N950W0807";
+// const char *password = "nuqt0826";
+// const char *mqtt_server = "192.168.42.84";
 //const char *ssid = "TP-Link_2AD8";
 //const char *password = "14730078";
 //const char *mqtt_server = "192.168.0.104";
-const char *ssid = "npt";
-const char *password = "12345789";
-const char *mqtt_server = "172.20.10.14";
+const char *ssid = "DucWifi 2.4GHz";
+const char *password = "Admin199z";
+const char *mqtt_server = "192.168.0.70";
 
 WiFiClient vanieriot;
 PubSubClient client(vanieriot);

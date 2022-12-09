@@ -55,8 +55,8 @@ uHumidityThreshold = 0
 uLightIntensity = 0
 
 # This works as long as the arduino code is running (change broker)
-#broker = '192.168.42.84'
-broker = '172.20.10.14'
+broker = '192.168.0.70'
+# broker = '172.20.10.14'
 
 port = 1883
 topic = "/IoTlab/status"
@@ -69,7 +69,7 @@ app = Dash(__name__)
 theme_change = ThemeChangerAIO(aio_id="theme",  radio_props={"persistence": True,  "value": dbc.themes.LUX});
 
 
-img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='53%', height='54%')
+img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='53%', height='53%')
 userPhoto = html.Img(src=app.get_asset_url('avatar.png'),width='15%', height='15%', style={'border-radius': '50%'})
 humidityValue = 0
 temperatureValue = 0
@@ -161,7 +161,7 @@ cardLighIntensity = dbc.Card([
         html.H5("Current Light Intensity", className="card-title"),
         html.Img(src=app.get_asset_url('light_intensity.png'),width='30%', height='31%'),
                 dbc.Input(
-                    size="mb",
+                    size="sm",
                     id='light-intensity-value',
                     className="mb",
                     value="The light intensity is " + str(current_light_intensity), 
@@ -229,7 +229,7 @@ cardFanControlTab= dbc.Card([
         html.H4("Fan Status", className="card-title, text-center")
     ]),
     dbc.CardBody([
-        html.Img(src=app.get_asset_url('fan.png'),width='35%', height='35%', 
+        html.Img(id='fan_picture',src=app.get_asset_url('fan.png'),width='35%', height='35%', 
                 style={
                     "margin": "5%"
                 } 
@@ -277,7 +277,7 @@ bluetoothDevicesCard = dbc.Card([
 
 content = html.Div([
             navbar, 
-            html.H1(children='Welcome to IoT Dashboard', style={'text-align': 'center', 'margin': '1rem'}),
+            html.H1(children='Welcome to IoT Dashboard', style={'text-align': 'center', 'margin': '3rem'}),
             dbc.Container([
                 dbc.Row([
                     dbc.Col(html.Div([
@@ -319,7 +319,7 @@ def update_output(n_clicks, value):
         no_current_devices = "None"
     else:
         no_current_devices = scan(int(value))
-    return 'The RSSI is "{}"'.format(
+    return 'The RSSI is > "{}"'.format(
         value
     ), "Bluetooth devices nearby: " + str(no_current_devices)
 
@@ -338,11 +338,11 @@ def create_connection(db_file):
 def update_output(n_clicks):
     if n_clicks % 2 == 1:
         GPIO.output(ledPin, GPIO.HIGH)
-        img = html.Img(src=app.get_asset_url('lightbulb_off.png'), width='200px', height='200px')
+        img = html.Img(src=app.get_asset_url('lightbulb_off.png'),width='53%', height='53%')
         return img
     else:
         GPIO.output(ledPin, GPIO.LOW)
-        img = html.Img(src=app.get_asset_url('lightbulb_on.png'),width='200px', height='200px')
+        img = html.Img(src=app.get_asset_url('lightbulb_on.png'),width='53%', height='53%')
         return img
        
 
@@ -353,9 +353,11 @@ def toggle_fan(value):
     if value:
         GPIO.output(Motor1, GPIO.HIGH)
         value = True
+        # fanPicture = app.get_asset_url('fan_on.png')
     else:
          GPIO.output(Motor1, GPIO.LOW)
          value = False
+        #  fanPicture = app.get_asset_url('fan.png')
     return value
 
 
@@ -428,7 +430,6 @@ def subscribe(client: mqtt_client):
             if(int(msg.payload.decode()) <= int(uLightIntensity)) :
                 GPIO.output(ledPin, GPIO.HIGH)
                 if(not flag):
-                    #uncomment for the email sent, with mine there are some issues but it seems to be the correct format (don't want to spam)
                     time = datetime.now(pytz.timezone('America/New_York'))
                     currtime = time.strftime("%H:%M")
                     send_email("Light", "The Light is ON")
@@ -447,7 +448,6 @@ def subscribe(client: mqtt_client):
             tagID = msg.payload.decode()
             logIn()
             
-        
     client.subscribe(topic)
     client.subscribe(topic2)
     client.on_message = on_message
@@ -480,14 +480,13 @@ def logIn():
             uHumidityThreshold = user[3]
             uLightIntensity = user[4]
 #             str, str, float, int, int
-#             userID, name, tempThreshold, humidityThreshold, lightIntensity
+#             userID, name, tempThreshold, humidityThreshold, lightIntensityThreshold
             print(username, uTempThreshold, uHumidityThreshold, uLightIntensity)
     
             time = datetime.now(pytz.timezone('America/New_York'))
             currtime = time.strftime("%H:%M")
             send_email("Log In", username + " entered at " + currtime)
             
-    
     finally:
         cur.close()
         
